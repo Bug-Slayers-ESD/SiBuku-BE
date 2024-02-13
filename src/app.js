@@ -1,6 +1,7 @@
 import express from "express";
 import path from "path";
 import fs from 'fs';
+import cors from "cors"
 import { fileURLToPath } from 'url';
 import fileUpload from "express-fileupload";
 import { sendCreated, sendError, sendNotFound, sendSuccess } from "./response/response.js";
@@ -12,6 +13,7 @@ const port = 3000
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+app.use(cors({credentials: true}))
 app.use(express.static((path.join(__dirname , '/public'))))
 app.use(express.json())
 app.use(express.urlencoded({extended: true}))
