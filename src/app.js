@@ -25,7 +25,7 @@ let booklist = [
     description: 'Roman Tetralogi Buru mengambil latar belakang dan cikal bakal nation Indonesia di awal abad ke-20. Dengan membacanya waktu kita dibalikkan sedemikian rupa dan hidup di era membibitnya pergerakan nasional mula-mula, juga pertautan rasa, kegamangan jiwa, percintaan, dan pertarungan kekuatan anonim para srikandi yang mengawal penyemaian bangunan nasional yang kemudian kelak melahirkan Indonesia modern.',
     author: 'Pramoedya Ananta Toer',
     image: '/image/bumi-manusia.jpg',
-    rating: 9.4,
+    rating: 3,
   },
   {
     id: 2,
@@ -33,7 +33,7 @@ let booklist = [
     description: '"Aku tahu sekarang, lebih banyak luka di hati bapakku dibanding di tubuhnya. Juga mamakku, lebih banyak tangis di hati Mamak dibanding di matanya." Sebuah kisah tentang perjalanan pulang, melalui pertarungan demi pertarungan, untuk memeluk erat semua kebencian dan rasa sakit."',
     author: 'Tere Liye',
     image: '/image/pulang.jpg',
-    rating: 9.4,
+    rating: 5,
   },
   {
     id: 3,
@@ -41,7 +41,7 @@ let booklist = [
     description: 'Buku Kosmos pada dasarnya merupakan buku ilmu pengetahuan, tetapi dengan gaya yang khas, kita dapat melihat bahwa ilmu pengetahuan dapat menjadi santapan masyarakat luas. Buku ini tidak hanya berguna untuk memperluas cakrawala kita, tetapi juga mengajak kita untuk menghayati dan mencintai penemuan ilmiah.',
     author: 'Carl Sagan',
     image: '/image/kosmos.jpg',
-    rating: 9.2,
+    rating: 4,
   }
 ]
 
@@ -51,21 +51,21 @@ let reviewlist = [
     bookId: 1,
     reviewer: 'User 1',
     review: 'Ini buku ok',
-    rating: 9.0,
+    rating: 5,
   },
   {
     id: 2,
     bookId: 3,
     reviewer: 'User 2',
     review: 'Ini buku juga ok',
-    rating: 10.0,
+    rating: 4,
   },
   {
     id: 3,
     bookId: 2,
     reviewer: 'User X',
     review: 'Ini buku okokok',
-    rating: 5.5
+    rating: 3
   }
 ]
 
