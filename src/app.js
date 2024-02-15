@@ -1,292 +1,247 @@
 import express from "express";
 import path from "path";
-import fs from 'fs';
-import cors from "cors"
-import { fileURLToPath } from 'url';
-import fileUpload from "express-fileupload";
-import { sendCreated, sendError, sendNotFound, sendSuccess } from "./response/response.js";
-import { postBookValidation, postReviewValidation } from "./response/helper.js";
+import fs from "fs";
+import { fileURLToPath } from "url";
+import multer from "multer";
+import { v4 as uuidv4 } from "uuid";
+import cors from "cors";
+import dotenv from "dotenv";
 
-const app = express()
-const port = 3000
+dotenv.config();
+const app = express();
+const port = process.env.PORT || 3001;
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-app.use(cors({credentials: true}))
-app.use(express.static((path.join(__dirname , '/public'))))
-app.use(express.json())
-app.use(express.urlencoded({extended: true}))
-app.use(fileUpload())
+app.use(cors({ credentials: true }));
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
-// Dummy datasets
-let booklist = [
-  {
-    id: 1,
-    title: 'Bumi Manusia',
-    description: 'Roman Tetralogi Buru mengambil latar belakang dan cikal bakal nation Indonesia di awal abad ke-20. Dengan membacanya waktu kita dibalikkan sedemikian rupa dan hidup di era membibitnya pergerakan nasional mula-mula, juga pertautan rasa, kegamangan jiwa, percintaan, dan pertarungan kekuatan anonim para srikandi yang mengawal penyemaian bangunan nasional yang kemudian kelak melahirkan Indonesia modern.',
-    author: 'Pramoedya Ananta Toer',
-    image: '/image/bumi-manusia.jpg',
-    rating: 3,
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, path.join(__dirname, "public", "image"));
   },
-  {
-    id: 2,
-    title: 'Pulang',
-    description: '"Aku tahu sekarang, lebih banyak luka di hati bapakku dibanding di tubuhnya. Juga mamakku, lebih banyak tangis di hati Mamak dibanding di matanya." Sebuah kisah tentang perjalanan pulang, melalui pertarungan demi pertarungan, untuk memeluk erat semua kebencian dan rasa sakit."',
-    author: 'Tere Liye',
-    image: '/image/pulang.jpg',
-    rating: 5,
+  filename: (req, file, cb) => {
+    console.log(file.originalname);
+    cb(null, Date.now() + path.extname(file.originalname));
   },
-  {
-    id: 3,
-    title: 'Kosmos',
-    description: 'Buku Kosmos pada dasarnya merupakan buku ilmu pengetahuan, tetapi dengan gaya yang khas, kita dapat melihat bahwa ilmu pengetahuan dapat menjadi santapan masyarakat luas. Buku ini tidak hanya berguna untuk memperluas cakrawala kita, tetapi juga mengajak kita untuk menghayati dan mencintai penemuan ilmiah.',
-    author: 'Carl Sagan',
-    image: '/image/kosmos.jpg',
-    rating: 4,
-  }
-]
+});
 
-let reviewlist = [
-  {
-    id: 1,
-    bookId: 1,
-    reviewer: 'User 1',
-    review: 'Ini buku ok',
-    rating: 5,
-  },
-  {
-    id: 2,
-    bookId: 3,
-    reviewer: 'User 2',
-    review: 'Ini buku juga ok',
-    rating: 4,
-  },
-  {
-    id: 3,
-    bookId: 2,
-    reviewer: 'User X',
-    review: 'Ini buku okokok',
-    rating: 3
-  }
-]
+const upload = multer({ storage });
 
-app.get('/', (req, res) => {
-  res.send('SiBuku REST API!')
-})
+app.get("/", (req, res) => {
+  res.send("SiBuku REST API!");
+});
 
 // ============= CATALOGUE API =============
-app.get('/books', (req, res) => {
+let booklist = [
+  {
+    id: "91hss012nasrs",
+    title: "Bumi Manusia",
+    description:
+      "Roman Tetralogi Buru mengambil latar belakang dan cikal bakal nation Indonesia di awal abad ke-20. Dengan membacanya waktu kita dibalikkan sedemikian rupa dan hidup di era membibitnya pergerakan nasional mula-mula, juga pertautan rasa, kegamangan jiwa, percintaan, dan pertarungan kekuatan anonim para srikandi yang mengawal penyemaian bangunan nasional yang kemudian kelak melahirkan Indonesia modern.",
+    author: "Pramoedya Ananta Toer",
+    image: `/public/image/bumi-manusia.jpg`,
+    rating: 2,
+  },
+  {
+    id: "18f29js1189f",
+    title: "Pulang",
+    description:
+      '"Aku tahu sekarang, lebih banyak luka di hati bapakku dibanding di tubuhnya. Juga mamakku, lebih banyak tangis di hati Mamak dibanding di matanya." Sebuah kisah tentang perjalanan pulang, melalui pertarungan demi pertarungan, untuk memeluk erat semua kebencian dan rasa sakit."',
+    author: "Tere Liye",
+    image: `/public/image/pulang.jpg`,
+    rating: 5,
+  },
+  {
+    id: "v3g5892k02u",
+    title: "Kosmos",
+    description:
+      "Buku Kosmos pada dasarnya merupakan buku ilmu pengetahuan, tetapi dengan gaya yang khas, kita dapat melihat bahwa ilmu pengetahuan dapat menjadi santapan masyarakat luas. Buku ini tidak hanya berguna untuk memperluas cakrawala kita, tetapi juga mengajak kita untuk menghayati dan mencintai penemuan ilmiah.",
+    author: "Carl Sagan",
+    image: `/public/image/kosmos.jpg`,
+    rating: 3,
+  },
+];
+
+app.get("/books", (req, res) => {
   try {
-    // Cari by title dengan Params
-    const findByTitle = req.query.title;
-
-    if (findByTitle) {
-      const filter = booklist.find(book => book.title.toLowerCase().includes(findByTitle.toLowerCase()));
-
-      if (!filter) return sendNotFound(res, 'Book not found!');
-      return sendSuccess(res, 'Success', { filter });
-    } 
-    return sendSuccess(res, 'Success', { booklist });
+    res.json({ booklist });
   } catch (error) {
     console.error(error);
-    return sendError(res, 'Internal server error!');
+    res.status(500).json({ message: error.message });
   }
-})
+});
 
-app.get('/books/:id', (req, res) => {
+app.get("/public/image/:filename", (req, res) => {
   try {
-    // Cari by title dengan Params
-    const findById = req.params.id;
-    const filter = booklist.find(book => book.id == findById);
-
-    if (!filter) return sendNotFound(res, 'Book not found!');
-    return sendSuccess(res, 'Success', { filter });
+    const { filename } = req.params;
+    console.log(filename);
+    res.sendFile(path.join(__dirname, "public", "image", filename));
   } catch (error) {
-    console.error(error);
-    return sendError(res, 'Internal server error!');
+    res.status(500).json({ message: error.message });
   }
-})
+});
 
-app.post('/books', (req, res) => {
+app.post("/books", upload.single("image"), (req, res) => {
   try {
-    const id = booklist.length + 1;
+    const id = uuidv4();
+    console.log(req.file, req.body);
     const { title, description, author, rating } = req.body;
-    const image = req.files.image;
-
-    const formatFilename = title.toLowerCase().replace(/[\s!@#$%^&*()_+={}\[\];:'",.<>?\/\\|`~-]/g, '');
-    const filename = `${formatFilename}.jpg`;
-
-    image.mv(path.join(__dirname, '../public/image', filename));
-
-    const { error } = postBookValidation(req.body);
-    if (error) return sendError(res, error.details[0].message, 400);
 
     const createdBook = {
       id,
       title,
       description,
-      author, 
-      image: `/image/${filename}`,
-      rating,
+      author,
+      image: `/public/image/${req.file.filename}`,
+      rating: parseInt(rating),
     };
 
-    return sendCreated(res, 'Book Created!', { createdBook });
+    booklist.push(createdBook);
+    res.status(201).json({ message: "Book Created!", booklist });
   } catch (error) {
-    console.error(error);
-    return sendError(res, 'Internal server error!');
+    res.status(500).json({ message: error.message });
   }
-})
+});
 
-app.put('/books/:id', (req, res) => {
+app.put("/books/:id", upload.single("image"), (req, res) => {
   try {
     const findById = req.params.id;
     const { title, description, author, rating } = req.body;
-    const filter = booklist.find(book => book.id == findById);
+    const filter = booklist.find((book) => book.id === findById);
 
-    if (!filter) return sendNotFound(res, 'Book not found!');
+    if (!filter) res.status(404).json({ message: "Book not found!" });
 
-    const oldFilename = `${filter.title.toLowerCase().replace(/[\s!@#$%^&*()_+={}\[\];:'",.<>?\/\\|`~-]/g, '')}.jpg`;
-    const newImage = req.files.image;
-
+    const newImage = req.file;
     if (newImage) {
       try {
-        fs.unlinkSync(path.join(__dirname, '../public/image', oldFilename));
+        fs.unlinkSync(
+          path.join(__dirname, "public", "image", newImage.filename)
+        );
       } catch (err) {
         console.error(err);
       }
 
-      const formatFilename = title.toLowerCase().replace(/[\s!@#$%^&*()_+={}\[\];:'",.<>?\/\\|`~-]/g, '');
-      const filename = `${formatFilename}.jpg`;
-
-      newImage.mv(path.join(__dirname, '../public/image', filename));
-      filter.image = `/image/${filename}`;
+      filter.image = `/public/image/${newImage.filename}`;
     }
-
-    const { error } = postBookValidation(req.body);
-    if (error) return sendError(res, error.details[0].message, 400);
 
     filter.title = title;
     filter.description = description;
     filter.author = author;
     filter.rating = rating;
 
-    return sendSuccess(res, 'Book Updated!', { filter });
+    res.json({ message: "Book Updated!", booklist });
   } catch (error) {
     console.error(error);
-    return sendError(res, 'Internal server error!');
+    res.status(500).json({ message: error.message });
   }
-})
+});
 
-app.delete('/books/:id', (req, res) => {
+app.delete("/books/:id", (req, res) => {
   try {
     const findById = req.params.id;
-    const filter = booklist.find(book => book.id == findById);
+    const bookExists = booklist.some((book) => book.id === findById);
 
-    if (!filter) return sendNotFound(res, 'Book not found!');
+    if (!bookExists) {
+      return res.status(404).json({ message: "Book not found!" });
+    }
 
-    const index = booklist.indexOf(filter);
-    booklist.splice(index, 1);
+    booklist = booklist.filter((book) => book.id !== findById);
 
-    return sendSuccess(res, 'Book deleted!', { filter });
+    res.json({ message: "Book Deleted!", booklist });
   } catch (error) {
     console.error(error);
-    return sendError(res, 'Internal server error!');
+    res.status(500).json({ message: error.message });
   }
-})
+});
 
 // ============= REVIEW API =============
-app.get('/books/:id/reviews', (req, res) => {
-  try {
-    const findBookById = req.params.id;
-    const filter = reviewlist.find(review => review.bookId == findBookById);
+let userReview = [
+  {
+    userId: "1234567890",
+    username: "bl57bh4g4",
+    bookId: "91hss012nasrs",
+    review: "Buku yang luar biasa! Sangat inspiratif dan membuka wawasan.",
+  },
+  {
+    userId: "0987654321",
+    username: "janedoe",
+    bookId: "18f29js1189f",
+    review: "Cerita yang menyentuh hati dan penuh makna.",
+  },
+  {
+    userId: "65bj5",
+    username: "johndoe",
+    bookId: "v3g5892k02u",
+    review: "Buku sains yang mudah dipahami dan menarik.",
+  },
+];
 
-    if (!filter) return sendNotFound(res, 'Book not found!');
-    return sendSuccess(res, 'Success', { filter })
+app.get("/reviews", (req, res) => {
+  try {
+    res.json({ userReview });
   } catch (error) {
-    console.error(error);
-    return sendError(res, 'Internal server error!');
+    res.status(500).json({ message: error.message });
   }
-})
+});
 
-app.post('books/:id/reviews', (req, res) => {
+app.post("/reviews", (req, res) => {
   try {
-    const findBookById = req.params.id;
-    const filter = reviewlist.find(review => review.bookId == findBookById);
-    
-    if (!filter) return sendNotFound(res, 'Book not found, cannot create review!');
-    
-    const { bookId = findBookById, reviewer, review, rating } = req.body;
-    const { error } = postReviewValidation(req.body);
+    console.log(req.body);
 
-    if (error) return sendError(res, error.details[0].message, 400);
-    
+    const { username, bookId, review } = req.body;
+    const userId = uuidv4();
+
     const createdReview = {
-      id,
+      userId,
+      username,
       bookId,
-      reviewer,
       review,
-      rating,
     };
-
-    return sendCreated(res, 'Review Created!', { createdReview });
+    userReview.push(createdReview);
+    res.status(201).json({ message: "Review Created!", userReview });
   } catch (error) {
-    console.error(error);
-    return sendError(res, 'Internal server error!');
+    res.status(500).json({ message: error.message });
   }
-})
+});
 
-app.put('books/:id/reviews/:review_id', (req, res) => {
+app.put("/reviews/:userId", (req, res) => {
   try {
-    const findBookById = req.params.id;
-    const filter = reviewlist.find(review => review.bookId == findBookById);
+    const { username, bookId, review } = req.body;
+    const { userId } = req.params;
 
-    const findReviewById = req.params.review_id;
-    const filter_review = reviewlist.find(review => review.id == findReviewById);
+    const filter = userReview.find((review) => review.userId === userId);
 
-    if (!filter) return sendNotFound(res, 'Book not found, cannot update review!');
-    else if (!filter_review) return sendNotFound(res, 'Book found, but the review is not found!');
-    else if (!filter && !filter_review) return sendNotFound(res, 'No book and review are found!');
+    if (!filter) res.status(404).json({ message: "Review not found!" });
 
-    const { bookId = findBookById, reviewer, review, rating } = req.body;
-    const { error } = postReviewValidation(req.body);
+    filter.username = username;
+    filter.bookId = bookId;
+    filter.review = review;
 
-    if (error) return sendError(res, error.details[0].message, 400);
-
-    filter_review.bookId = bookId;
-    filter_review.reviewer = reviewer;
-    filter_review.review = review;
-    filter_review.rating = rating;
-
-    return sendSuccess(res, 'Review Updated!', { filter_review });
+    res.json({ message: "Review Updated!", userReview });
   } catch (error) {
-    console.error(error);
-    return sendError(res, 'Internal server error!');
+    res.status(500).json({ message: error.message });
   }
-}) 
+});
 
-app.delete('books/:id/reviews/:review_id', (req, res) => {
+app.delete("/reviews/:id", (req, res) => {
   try {
-    const findBookById = req.params.id;
-    const filter = reviewlist.find(review => review.bookId == findBookById);
+    const { id } = req.params;
+    const reviewExists = userReview.find((review) => review.userId === id);
+    console.log(id);
 
-    const findReviewById = req.params.review_id;
-    const filter_review = reviewlist.find(review => review.id == findReviewById);
+    if (!reviewExists) res.status(404).json({ message: "Review not found!" });
 
-    if (!filter) return sendNotFound(res, 'Book not found, cannot update review!');
-    else if (!filter_review) return sendNotFound(res, 'Book found, but the review is not found!');
-    else if (!filter && !filter_review) return sendNotFound(res, 'No book and review are found!');
+    userReview = userReview.filter((review) => review.userId !== id);
 
-    const index = reviewlist.indexOf(findReviewById);
-    reviewlist.splice(index, 1);
-
-    return sendSuccess(res, 'Review Deleted!', { filter_review });
+    res.json({ message: "Review Deleted!", userReview });
   } catch (error) {
-    console.error(error);
-    return sendError(res, 'Internal server error!');
+    res.status(500).json({ message: error.message });
   }
-})
+});
 
 app.listen(port, () => {
-  console.log(`Example app listening on port ${port}`)
-})
+  console.log(`Example app listening on port ${port}`);
+});
