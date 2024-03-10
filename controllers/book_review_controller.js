@@ -1,5 +1,4 @@
 const { postReviewValidation } = require('../validations/input_validations.js')
-const { book, book_review } = require('../models/index.js');
 
 const { sendCreated,
     sendError,
@@ -7,107 +6,45 @@ const { sendCreated,
     sendSuccess
 } = require('../helpers/responses.js')
 
+const {
+    getBookReviewsService, 
+    postAddBookReviewService,
+    updateBookReviewService,
+    deleteBookReviewService,
+ } = require('../services/book_review_services.js')
+
 const getAllBookReviews = async (req, res) => {
     try {
-        const findBookById = req.params.id;
-
-        const isFound = await book.findOne({
-            where: {
-                id: findById
-            }
-        });
-
-        if (!isFound) return sendNotFound(res, 'Book not found!');
-        else {
-            const data = await book_review.findAll({
-                where: {
-                    bookid: findBookById
-                },
-            });
-
-            return sendSuccess(res, 'Success', { data });
-        }
+        const result = await getBookReviewsService(req)
+        
+        if (result == null || result.length == 0) sendNotFound(res, 'Books review not found!')
+        else return sendSuccess(res, 'Success', result)
     } catch (error) {
-        console.error(error);
-        return sendError(res, 'Internal server error!');
+        console.error(error)
+        return sendError(res, 'Internal server error!')
     }
 }
 
 const postAddBookReview = async (req, res) => {
     try {
-        const findBookById = req.params.id;
-        const { reviewer, review, rating } = req.body;
+        const { error } = postReviewValidation(req.body)
+        if (error) return sendError(res, error.details[0].message, 400)
 
-        const { error } = postReviewValidation(req.body);
-        if (error) return sendError(res, error.details[0].message, 400);
-
-        const isFound = await book.findOne({
-            where: {
-                id: findById
-            }
-        });
-
-        if (!isFound) return sendNotFound(res, 'Book not found!');
-        else {
-            const data = await book_review.create(
-                bookid = findBookById,
-                reviewer,
-                review,
-                rating,
-            );
-
-            return sendCreated(res, 'Review Created!', { data });
-        }
+        const result = await postAddBookReviewService(req)
+        return sendCreated(res, 'Review added!', result)
     } catch (error) {
-        console.error(error);
-        return sendError(res, 'Internal server error!');
+        console.error(error)
+        return sendError(res, 'Internal server error!')
     }
 }
 
 const updateBookReview = async (req, res) => {
     try {
-        const findBookById = req.params.id;
-        const findReviewById = req.params.review_id;
+        const { error } = postReviewValidation(req.body)
+        if (error) return sendError(res, error.details[0].message, 400)
 
-        const isFound = await book.findOne({
-            where: {
-                id: findBookById
-            }
-        });
-
-        const isReviewFound = await book_review.findAll({
-            where: {
-                id: findReviewById
-            },
-        });
-
-        if (!isFound && !isReviewFound) return sendNotFound(
-            res, 'No book and review are found!'
-        );
-        else if (!isFound) return sendNotFound(
-            res, 'Book not found, cannot update review!'
-        );
-        else if (!isReviewFound) return sendNotFound(
-            res, 'Book found, but the review is not found!'
-        );
-        else {
-            const { reviewer, review, rating } = req.body;
-            const { error } = postReviewValidation(req.body);
-            if (error) return sendError(res, error.details[0].message, 400);
-
-            const data = await book_review.update({
-                reviewer,
-                review,
-                rating,
-            }, {
-                where: {
-                    id: findReviewById,
-                    bookid: findBookById
-                }
-            });
-
-            return sendSuccess(res, 'Review Updated!', { data });
-        }
+        const result = await updateBookReviewService(req)
+        return sendSuccess(res, 'Review updated!', result)
     } catch (error) {
         console.error(error);
         return sendError(res, 'Internal server error!');
@@ -116,34 +53,8 @@ const updateBookReview = async (req, res) => {
 
 const deleteBookReview = async (req, res) => {
     try {
-        const findBookById = req.params.id;
-        const findReviewById = req.params.review_id;
-
-        const isFound = await book.findOne({
-            where: {
-                id: findBookById
-            }
-        });
-
-        const isReviewFound = await book_review.findAll({
-            where: {
-                id: findReviewById
-            },
-        });
-
-        if (!isFound && !isReviewFound) return sendNotFound(res, 'No book and review are found!');
-        else if (!isFound) return sendNotFound(res, 'Book not found, cannot update review!');
-        else if (!isReviewFound) return sendNotFound(res, 'Book found, but the review is not found!');
-        else {
-            const data = await book_review.destroy({
-                where: {
-                    id: findById,
-                    bookid: findReviewById
-                },
-            });
-
-            return sendSuccess(res, 'Review Deleted!', { data });
-        }
+        const result = await deleteBookReviewService(req, res)
+        return sendSuccess(res, 'Review deleted!', result)
     } catch (error) {
         console.error(error);
         return sendError(res, 'Internal server error!');

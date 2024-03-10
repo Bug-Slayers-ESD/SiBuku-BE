@@ -33,9 +33,9 @@ router.put('/books/:id', updateBook)
 router.delete('/books/:id', deleteBook)
 
 // ============= REVIEW API =============
-router.get('/books/:id/reviews', getAllBookReviews)
-router.post('/books/:id/reviews', postAddBookReview)
-router.put('/books/:id/reviews/:review_id', updateBookReview)
-router.delete('/books/:id/reviews/:review_id', deleteBookReview)
+router.get('/books/:book_id/reviews', getAllBookReviews)
+router.post('/books/:book_id/reviews', postAddBookReview)
+router.put('/books/:book_id/reviews/:review_id', updateBookReview)
+router.delete('/books/:book_id/reviews/:review_id', deleteBookReview)
 
 module.exports = router;

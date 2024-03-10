@@ -1,6 +1,3 @@
-const { postBookValidation } = require('../validations/input_validations.js')
-const { book } = require('../models/index.js');
-
 const {
     sendCreated,
     sendError,
@@ -8,25 +5,23 @@ const {
     sendSuccess
 } = require('../helpers/responses.js')
 
+const { imageValidations } = require('../validations/image_validations.js')
+const { postBookValidation } = require('../validations/input_validations.js')
+
+const {
+    getAllBookService,
+    getSpecificBookService,
+    postBookService,
+    updateBookService,
+    deleteBookService,
+} = require('../services/book_services.js')
+
 const getAllBooks = async (req, res) => {
     try {
-        const findByTitle = req.query.title;
+        const result = await getAllBookService(req);
 
-        if (findByTitle) {
-            const data = await book.findOne({
-                where: {
-                    title: findByTitle
-                }
-            });
-
-            if (data == null) sendNotFound(res, 'Book not found!');
-            return sendSuccess(res, 'Success', { data });
-        }
-
-        const data = await book.findAll();
-
-        if (data == null) sendNotFound(res, 'Book not found!');
-        return sendSuccess(res, 'Success', { data });
+        if (result == null || result.length == 0) sendNotFound(res, 'Books not found!');
+        else return sendSuccess(res, 'Success', result);
     } catch (error) {
         console.error(error);
         return sendError(res, 'Internal server error!');
@@ -35,16 +30,10 @@ const getAllBooks = async (req, res) => {
 
 const getSpecificBookById = async (req, res) => {
     try {
-        const findById = req.params.id;
+        const result = await getSpecificBookService(req, res);
 
-        const data = await book.findOne({
-            where: {
-                id: findById
-            }
-        });
-
-        if (data == null) sendNotFound(res, 'Book not found!');
-        return sendSuccess(res, 'Success', { data });
+        if (result == null) sendNotFound(res, 'Book not found!');
+        else return sendSuccess(res, 'Success', result);
     } catch (error) {
         console.error(error);
         return sendError(res, 'Internal server error!');
@@ -53,26 +42,14 @@ const getSpecificBookById = async (req, res) => {
 
 const postAddBook = async (req, res) => {
     try {
-        const { title, description, author, rating } = req.body;
-        const image = req.files.image;
-
-        const formatFilename = title.toLowerCase().replace(/[\s!@#$%^&*()_+={}\[\];:'",.<>?\/\\|`~-]/g, '');
-        const filename = `${formatFilename}.jpg`;
-
-        image.mv(path.join(__dirname, '../public/image', filename));
-
         const { error } = postBookValidation(req.body);
         if (error) sendError(res, error.details[0].message, 400);
 
-        const data = await book.create({
-            title,
-            description,
-            author,
-            image: `/image/${filename}`,
-            rating,
-        });
+        const imageValidate = imageValidations(req)
+        if (imageValidate.error) return sendError(res, imageValidate.message, 400);
 
-        return sendCreated(res, 'Book Created!', { data });
+        const result = await postBookService(req);
+        return sendCreated(res, 'Book Created!', result);
     } catch (error) {
         console.error(error);
         return sendError(res, 'Internal server error!');
@@ -81,53 +58,14 @@ const postAddBook = async (req, res) => {
 
 const updateBook = async (req, res) => {
     try {
-        const findById = req.params.id;
-        const { title, description, author, rating } = req.body;
-
-        var image = '';
-        const oldFilename = `${title.toLowerCase().replace(/[\s!@#$%^&*()_+={}\[\];:'",.<>?\/\\|`~-]/g, '')}.jpg`;
-        const newImage = req.files.image;
-
-        if (newImage) {
-            try {
-                fs.unlinkSync(path.join(__dirname, '../public/image', oldFilename));
-            } catch (err) {
-                console.error(err);
-            }
-
-            const formatFilename = title.toLowerCase().replace(/[\s!@#$%^&*()_+={}\[\];:'",.<>?\/\\|`~-]/g, '');
-            const filename = `${formatFilename}.jpg`;
-
-            newImage.mv(path.join(__dirname, '../public/image', filename));
-            image = `/image/${filename}`;
-        }
-
         const { error } = postBookValidation(req.body);
-        if (error) return sendError(res, error.details[0].message, 400);
+        if (error) sendError(res, error.details[0].message, 400);
 
-        const isFound = await book.findOne({
-            where: {
-                id: findById
-            }
-        });
+        const imageValidate = imageValidations(req)
+        if (imageValidate.error) return sendError(res, imageValidate.message, 400); 
 
-        if (!isFound) return sendNotFound(res, 'Book not found!');
-        else {
-            const data = await book.update({
-                title: title,
-                description: description,
-                author: author,
-                image: image,
-                rating: rating,
-            },
-                {
-                    where: {
-                        id: findById
-                    },
-                });
-
-            return sendSuccess(res, 'Book Updated!', { data });
-        }
+        const result = await updateBookService(req);
+        return sendSuccess(res, 'Book updated!', result);
     } catch (error) {
         console.error(error);
         return sendError(res, 'Internal server error!');
@@ -136,23 +74,8 @@ const updateBook = async (req, res) => {
 
 const deleteBook = async (req, res) => {
     try {
-        const findById = req.params.id;
-        const isFound = await book.findOne({
-            where: {
-                id: findById
-            }
-        });
-
-        if (!isFound) return sendNotFound(res, 'Book not found!');
-        else {
-            const data = await book.destroy({
-                where: {
-                    id: findById
-                },
-            });
-
-            return sendSuccess(res, 'Book deleted!', { data });
-        }
+        const result = await deleteBookService(req, res);
+        return sendSuccess(res, 'Book deleted!', result);
     } catch (error) {
         console.error(error);
         return sendError(res, 'Internal server error!');
@@ -164,5 +87,5 @@ module.exports = {
     getSpecificBookById,
     postAddBook,
     updateBook,
-    deleteBook
+    deleteBook,
 }
