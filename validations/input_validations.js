@@ -1,3 +1,5 @@
+const joi = require('joi')
+
 // Input validation
 const postBookValidation = (book) => {
     const schema = joi.object({
