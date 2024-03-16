@@ -2,7 +2,7 @@ const {
     sendCreated,
     sendError,
     sendNotFound,
-    sendSuccess
+    sendSuccess,
 } = require('../helpers/responses.js')
 
 const { imageValidations } = require('../validations/image_validations.js')
@@ -21,7 +21,9 @@ const getAllBooks = async (req, res) => {
         const result = await getAllBookService(req);
 
         if (result == null || result.length == 0) sendNotFound(res, 'Books not found!');
-        else return sendSuccess(res, 'Success', result);
+        else {
+            return sendSuccess(res, 'Success', result);
+        }
     } catch (error) {
         console.error(error);
         return sendError(res, 'Internal server error!');
@@ -46,7 +48,7 @@ const postAddBook = async (req, res) => {
         if (error) sendError(res, error.details[0].message, 400);
 
         const imageValidate = imageValidations(req)
-        if (imageValidate.error) return sendError(res, imageValidate.message, 400);
+        if (imageValidate.error) return res.status(400).send(imageValidate.message);
 
         const result = await postBookService(req);
         return sendCreated(res, 'Book Created!', result);
@@ -60,12 +62,14 @@ const updateBook = async (req, res) => {
     try {
         const { error } = postBookValidation(req.body);
         if (error) sendError(res, error.details[0].message, 400);
-
-        const imageValidate = imageValidations(req)
-        if (imageValidate.error) return sendError(res, imageValidate.message, 400); 
-
-        const result = await updateBookService(req);
-        return sendSuccess(res, 'Book updated!', result);
+        
+        else {
+            const imageValidate = imageValidations(req)
+            if (imageValidate.error) return res.status(400).send(imageValidate.message);
+    
+            const result = await updateBookService(req);
+            return sendSuccess(res, 'Book updated!', result);
+        }
     } catch (error) {
         console.error(error);
         return sendError(res, 'Internal server error!');

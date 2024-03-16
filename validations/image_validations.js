@@ -19,7 +19,7 @@ const imageValidations = (req) => {
 
     return {
         error: false,
-        message: 'Success'
+        message: 'Success',
     }
 }
 
